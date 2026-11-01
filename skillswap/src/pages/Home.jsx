@@ -1,16 +1,35 @@
-import { useState } from "react";
-import { filterSkillsByCategory, calculateTotalCosts, matchSkillsToUser } from "../skillswap-functions.js";
+import { useState, useEffect } from "react";
+import {
+  filterSkillsByCategory,
+  calculateTotalCosts,
+  matchSkillsToUser
+} from "../skillswap-functions.js";
 import SkillCard from "../components/SkillCard";
-
-const skills = [
-  { title: "Python Tutoring", category: "Programming", price: 20 },
-  { title: "Guitar Lessons", category: "Music", price: 15 },
-  { title: "Resume Review", category: "Career", price: 0 },
-  { title: "Web Development", category: "Programming", price: 25 }
-];
+import { fetchSkills, createSkill } from "../services/apiService";
 
 function Home() {
-  // Filtering state
+  const [skills, setSkills] = useState([]);
+
+  const [newSkill, setNewSkill] = useState({
+    title: "",
+    category: "",
+    price: "",
+    description: "",
+  });
+
+  async function loadSkills() {
+    try {
+      const data = await fetchSkills();
+      setSkills(data);
+    } catch (error) {
+      console.error("Failed to load skills:", error);
+    }
+  }
+
+  useEffect(() => {
+    loadSkills();
+  }, []);
+
   const [selectedCategory, setSelectedCategory] = useState("All");
   const filteredSkills = filterSkillsByCategory(skills, selectedCategory);
 
@@ -39,6 +58,35 @@ function Home() {
     setMatchedSkills(result);
   }
 
+  function handleInputChange(e) {
+    const { name, value } = e.target;
+
+    setNewSkill((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  }
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+
+    try {
+      await createSkill(newSkill);
+
+      await loadSkills();
+      
+      setNewSkill({
+        title: "",
+        category: "",
+        price: "",
+        description: "",
+      });
+
+    } catch (error) {
+      console.error("Failed to create skill:", error);
+    }
+  }
+
   return (
     <main>
       <section className="hero">
@@ -46,18 +94,67 @@ function Home() {
         <p>Exchange skills. Learn from others. Grow together.</p>
       </section>
 
+      <section className="create-skill-section">
+        <h3>Add a Skill</h3>
+
+        <form onSubmit={handleSubmit}>
+          <input
+            type="text"
+            name="title"
+            placeholder="Title"
+            value={newSkill.title}
+            onChange={handleInputChange}
+            required
+          />
+
+          <input
+            type="text"
+            name="category"
+            placeholder="Category"
+            value={newSkill.category}
+            onChange={handleInputChange}
+            required
+          />
+
+          <input
+            type="number"
+            name="price"
+            placeholder="Price"
+            value={newSkill.price}
+            onChange={handleInputChange}
+            required
+          />
+
+          <textarea
+            name="description"
+            placeholder="Description"
+            value={newSkill.description}
+            onChange={handleInputChange}
+            required
+          />
+
+          <button type="submit">
+            Create Skill
+          </button>
+        </form>
+      </section>
+
       <section className="skills-section">
         <h3>Available Skills</h3>
 
-        {/* Filter Buttons */}
         <div className="filters">
           <button onClick={() => setSelectedCategory("All")}>All</button>
-          <button onClick={() => setSelectedCategory("Programming")}>Programming</button>
-          <button onClick={() => setSelectedCategory("Music")}>Music</button>
-          <button onClick={() => setSelectedCategory("Career")}>Career</button>
+          <button onClick={() => setSelectedCategory("Programming")}>
+            Programming
+          </button>
+          <button onClick={() => setSelectedCategory("Music")}>
+            Music
+          </button>
+          <button onClick={() => setSelectedCategory("Career")}>
+            Career
+          </button>
         </div>
 
-        {/* Dynamic Skill Cards */}
         <div className="skills-grid">
           {filteredSkills.map((skill, index) => (
             <SkillCard
@@ -67,11 +164,10 @@ function Home() {
               price={skill.price}
               provider="Skill Provider"
             />
-          ))}
+  ))}
         </div>
       </section>
 
-      {/* ⭐ Cost Calculator Section */}
       <section className="cost-section">
         <h3>Cost Calculator</h3>
 
@@ -94,15 +190,18 @@ function Home() {
             />
           </label>
 
-          <button onClick={handleCalculate}>Calculate</button>
+          <button onClick={handleCalculate}>
+            Calculate
+          </button>
         </div>
 
         {totalCost !== null && (
-          <p className="cost-result">Total Cost: ${totalCost}</p>
+          <p className="cost-result">
+            Total Cost: ${totalCost}
+          </p>
         )}
       </section>
 
-      {/* ⭐ Match Skills Section */}
       <section className="match-section">
         <h3>Find My Match</h3>
 
@@ -127,7 +226,9 @@ function Home() {
             />
           </label>
 
-          <button onClick={handleMatchSkills}>Find Match</button>
+          <button onClick={handleMatchSkills}>
+            Find Match
+          </button>
         </div>
 
         <div className="skills-grid">
